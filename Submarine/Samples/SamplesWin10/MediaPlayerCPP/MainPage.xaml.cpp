@@ -55,9 +55,9 @@ using namespace Windows::Web::Http; // For network communication
 using namespace Windows::Gaming::Input; // For gamepads
 using namespace concurrency; // For running tasks in the background, like network communication
 using namespace Platform::Collections; // For vectors
-using namespace FFmpegInterop;
-using namespace Windows::Media::Core;
-using namespace Windows::UI::Popups;
+using namespace FFmpegInterop; // For the video feed. Getting this working almost killed me
+using namespace Windows::Media::Core; // Further stuff for the camera
+using namespace Windows::UI::Popups; // To yell at the user when things go wrong
 
 // Global Variables and Objects
 auto client = ref new HttpClient(); // Object which handles network communication
@@ -86,7 +86,7 @@ c_l = false, c_q = false, c_e = false, c_sh = false, c_sp = false;
 
 // Gamepad Stuff
 Gamepad^ gamepad = nullptr; // Instantiate the gamepad class to get the list of connected gamepads
-Vector<Gamepad^>^ padList = ref new Vector<Gamepad^>(); // Store our own list of gamepads, recommended by Microsoft
+//Vector<Gamepad^>^ padList = ref new Vector<Gamepad^>(); // Store our own list of gamepads, recommended by Microsoft
 double deadzone = 0.35; // Deadzone for the analog sticks to activate
 
 MainPage::MainPage()
@@ -139,12 +139,14 @@ void Submarine::MainPage::controls_click(Platform::Object^ sender, Windows::UI::
 	manualcont->Content = "Show ESC Overrides";
 }
 
-// Take in the user's input in the GUI as the value of the global variables for the IP addresses
+// Connect to the Arduino and the IP Camera
 void Submarine::MainPage::connect_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
+	// Take in the user's input in the GUI as the value of the global variables for the IP addresses
 	camAddr = camip->Text;
 	contAddr = contip->Text;
 
+	// Connect the Arduino and begin communication
 	auto timer = ref new DispatcherTimer(); // Create a timer on which to talk to the Arduino. This is the easiest way to loop code in GUI
 	TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
 	ts.Duration = 100000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
@@ -152,12 +154,12 @@ void Submarine::MainPage::connect_click(Platform::Object^ sender, Windows::UI::X
 	auto doit = timer->Tick += ref new EventHandler<Object^>(this, &MainPage::sendRequest); // Attach network communication to the timer
 	timer->Start(); // Start the timer
 
+	// Connect the camera and display its feed
 	// Make a string for the full address for the RTSP stream.
 	// Annoyingly, this URL format is different for just about every model of IPCam, so this only applies to the ESCAM QH002 that we used
 	// We intend for everything in this project to be upgradeable, so this is a problem if students/Dr. Choi down the line want to upgrade the camera
 	// Luckily, I found some software called ONVIF that you can use to give you the stream to any IP Camera. Give it a Google.
 	String^ camStream = "rtsp://" + camAddr + "/ch01.264?dev=1";
-	//String^ camStream = "rtsp://192.168.1.189/ch01.264?dev=1";
 	PropertySet^ options = ref new PropertySet();
 	// Below are some sample options that you can set to configure RTSP streaming
 	options->Insert("rtsp_flags", "prefer_tcp");
@@ -298,13 +300,66 @@ void Submarine::MainPage::kbdRelease(Platform::Object^ sender, Windows::UI::Xaml
 
 void Submarine::MainPage::Xboxc_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
-	if (padList->Size > 0) {
+	if (gamepad->Gamepads->Size > 0) {
 		auto timer = ref new DispatcherTimer(); // Create a timer on which to poll the gamepad, just like we did with the network communication
 		TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
 		ts.Duration = 100000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
 		timer->Interval = ts; // Set the interval
 		auto doit = timer->Tick += ref new EventHandler<Object^>(this, &MainPage::pollPad); // Attach network communication to the timer
 		timer->Start(); // Start the timer
+	}
+}
+
+void Submarine::MainPage::pollPad(Object^ sender, Object^ e) {
+	auto userpad = gamepad->Gamepads->GetAt(0); // Get the first of the list of gamepads
+	auto state = userpad->GetCurrentReading(); // Read the state of the gamepad
+	if (state.LeftThumbstickY < -deadzone) // Apply the current controls
+		c_w = true;
+	if (state.LeftThumbstickY > deadzone)
+		c_s = true;
+	if (state.LeftThumbstickX < -deadzone)
+		c_a = true;
+	if (state.LeftThumbstickX > deadzone)
+		c_d = true;
+	if (state.RightThumbstickY < -deadzone)
+		c_i = true;
+	if (state.RightThumbstickY > deadzone)
+		c_k = true;
+	if (state.RightThumbstickX < -deadzone)
+		c_j = true;
+	if (state.RightThumbstickX > deadzone)
+		c_l = true;
+	if (state.LeftTrigger > deadzone)
+		c_q = true;
+	if (state.RightTrigger > deadzone)
+		c_e = true;
+	if (state.Buttons.ToString == "LeftShoulder")
+		c_sh = true;
+	if (state.Buttons.ToString == "RightShoulder")
+		c_sp = true;
+	if (!state.LeftThumbstickY < -deadzone)
+		c_w = false;
+	if (!state.LeftThumbstickY > deadzone)
+		c_s = false;
+	if (!state.LeftThumbstickX < -deadzone)
+		c_a = false;
+	if (!state.LeftThumbstickX > deadzone)
+		c_d = false;
+	if (!state.RightThumbstickY < -deadzone)
+		c_i = false;
+	if (!state.RightThumbstickY > deadzone)
+		c_k = false;
+	if (!state.RightThumbstickX < -deadzone)
+		c_j = false;
+	if (!state.RightThumbstickX > deadzone)
+		c_l = false;
+	if (!state.LeftTrigger > deadzone)
+		c_q = false;
+	if (!state.RightTrigger > deadzone)
+		c_e = false;
+	if (state.Buttons.ToString == "None"){
+		c_sh = false;
+		c_sp = false;
 	}
 }
 
@@ -336,7 +391,7 @@ void Submarine::MainPage::sendRequest(Object^ sender, Object^ e) {
 		});
 	}
 	catch (COMException^ ex) {
-		servos->Text += ("\n" + ex->Message);
+		auto errorDialog = ref new MessageDialog("Controller Communication Failure"); errorDialog->ShowAsync();
 	}
 }
 
@@ -386,11 +441,7 @@ void Submarine::MainPage::servToScreen() { // Getting the ESC and headlight data
 		"\nHeadlight Brightness\n" + ((light - 1100) / 8) + " %\t" + light + " microseconds\n";
 }
 
-void Submarine::MainPage::pollPad(Object^ sender, Object^ e) {
-	auto userpad = padList->GetAt(0); // Get the first of the list of gamepads
-	auto state = userpad->GetCurrentReading();
 
-}
 
 // A note on maximum thruster speeds in the early versions of the code:
 // Each thruster has a hard cap on its speed so as to not trip the 30 A breaker or overheat the power wire

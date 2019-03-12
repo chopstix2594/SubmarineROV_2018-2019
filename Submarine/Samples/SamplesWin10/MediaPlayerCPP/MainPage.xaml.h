@@ -28,6 +28,8 @@ namespace Submarine
 		MainPage();
 
 	private:
+		FFmpegInterop::FFmpegInteropMSS^ FFmpegMSS;
+
 		void sensorData_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void controls_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void connect_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
@@ -37,15 +39,13 @@ namespace Submarine
 		void override_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void brightness(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
 		void Xboxc_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
+		void pollPad(Object^ sender, Object^ e);
 		void camfail(Platform::Object^ sender, Windows::UI::Xaml::ExceptionRoutedEventArgs^ e);
 
 		void sendRequest(Object^, Object^);
 		void codeParse(std::wstring);
 		void sensToScreen();
 		void servToScreen();
-		void pollPad(Object^ sender, Object^ e);
-
-		FFmpegInterop::FFmpegInteropMSS^ FFmpegMSS;
 
 	};
 }

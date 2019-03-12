@@ -32,15 +32,17 @@ will be automatically placed in the C++ program for you to code it out to your h
         <MediaElement x:Name="camfeed" HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" AreTransportControlsEnabled="False" AutoPlay="True" AudioCategory="ForegroundOnlyMedia" Visibility="Visible" MediaFailed="camfail"/>
         <TextBlock x:Name="servos" Margin="0,32,0,197" Text="Null ESC data." TextWrapping="Wrap" Visibility="Visible" RequestedTheme="Dark" HorizontalAlignment="Right" Width="960" FontSize="14" RenderTransformOrigin="0.5,0.5" TextAlignment="Right" VerticalAlignment="Stretch"/>
         <TextBlock x:Name="sensors" Margin="0,31,0,200" Text="Null sensor data." TextWrapping="Wrap" Visibility="Visible" RequestedTheme="Dark" HorizontalAlignment="Left" Width="960" FontSize="14" RenderTransformOrigin="0.5,0.5" VerticalAlignment="Stretch"/>
-        <Button x:Name="sensorData" Content="Hide Sensor and ESC Data" HorizontalAlignment="Left" VerticalAlignment="Top" Click="sensorData_click" Height="31" Width="198" RequestedTheme="Dark" Margin="550,0,0,0"/>
-        <Button x:Name="controls" Content="Hide On-Screen Controls" HorizontalAlignment="Left" VerticalAlignment="Top" Click="controls_click" Height="31" Width="185" RequestedTheme="Dark" Margin="749,0,0,0"/>
-        <Button x:Name="manualcont" Content="Show ESC Overrides" HorizontalAlignment="Left" VerticalAlignment="Top" Height="31" Width="157" RequestedTheme="Dark" Margin="935,0,0,0" Click="Manualcont_Click"/>
-        <Button x:Name="xboxc" Content="Enable Gamepad" HorizontalAlignment="Left" VerticalAlignment="Top" Height="31" Width="133" RequestedTheme="Dark" Margin="1093,0,0,0" Click="Xboxc_Click"/>
+        <Button x:Name="sensorData" Content="Hide Sensor and ESC Data" HorizontalAlignment="Right" VerticalAlignment="Top" Click="sensorData_click" Height="31" Width="198" RequestedTheme="Dark" Margin="0,0,318,0"/>
+        <Button x:Name="controls" Content="Hide On-Screen Controls" HorizontalAlignment="Right" VerticalAlignment="Top" Click="controls_click" Height="31" Width="185" RequestedTheme="Dark" Margin="0,0,133,0"/>
+        <Button x:Name="manualcont" Content="Show ESC Overrides" HorizontalAlignment="Right" VerticalAlignment="Top" Height="31" Width="157" RequestedTheme="Dark" Margin="0,0,516,0" Click="Manualcont_Click"/>
+        <Button x:Name="xboxc" Content="Enable Gamepad" HorizontalAlignment="Right" VerticalAlignment="Top" Height="31" Width="133" RequestedTheme="Dark" Margin="1093,0,0,0" Click="Xboxc_Click"/>
         <Button x:Name="connect" Content="Connect Submarine ROV" HorizontalAlignment="Left" VerticalAlignment="Top" RequestedTheme="Dark" Click="connect_click" Height="31" Width="183"/>
         <TextBox x:Name="camip" HorizontalAlignment="Left" Text="192.168.1.189" VerticalAlignment="Top" Width="112" Height="33" Margin="437,0,0,0"/>
         <TextBox x:Name="contip" HorizontalAlignment="Left" Margin="261,0,0,0" Text="192.168.1.182" VerticalAlignment="Top" Width="112" Height="33"/>
         <TextBlock x:Name="Controller" HorizontalAlignment="Left" Text="Controller: " RequestedTheme="Dark" TextWrapping="Wrap" VerticalAlignment="Top" Height="19" Width="74" Margin="186,6,0,0"/>
         <TextBlock x:Name="Camera" HorizontalAlignment="Left" Margin="378,6,0,0" Text="Camera: " RequestedTheme="Dark" TextWrapping="Wrap" VerticalAlignment="Top" Height="19" Width="59"/>
+        <TextBlock x:Name="textBlock" HorizontalAlignment="Right" Text="Headlight Brightness" TextWrapping="Wrap" VerticalAlignment="Bottom" Width="272" TextAlignment="Center" RequestedTheme="Dark"  Height="19" Margin="0,0,10,221" />
+        <Slider x:Name="slider" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="272" RequestedTheme="Dark" ValueChanged="brightness" Height="33" Margin="0,0,10,195"  />
         <Grid x:Name="ESCOverrides" Height="195" VerticalAlignment="Bottom" Visibility="Collapsed" Grid.ColumnSpan="2">
             <Button x:Name="leftplus" Content="Left +" HorizontalAlignment="Left" Margin="90,0,0,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"  Click="override_click"/>
             <Button x:Name="leftminus" Content="Left -" HorizontalAlignment="Left" Margin="90,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"  Click="override_click"/>
@@ -65,14 +67,11 @@ will be automatically placed in the C++ program for you to code it out to your h
             <Button x:Name="yawminus" Content="Yaw Left" HorizontalAlignment="Right" Margin="0,0,184,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
             <Button x:Name="pitchminus" Content="Pitch Down" HorizontalAlignment="Right" Margin="0,0,96,10" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
             <Button x:Name="yawplus" Content="Yaw Right" HorizontalAlignment="Right" Margin="0,0,10,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="rollminus" Content="Roll Counterclockwise" HorizontalAlignment="Left" Margin="124,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="160"/>
+            <Button x:Name="rollminus" Content="Roll Counterclockwise" HorizontalAlignment="Left" Margin="124,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="166"/>
             <Button x:Name="rollplus" Content="Roll Clockwise" HorizontalAlignment="Right" Margin="0,0,123,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="160"/>
             <Button x:Name="zplus" Content="Ascend" HorizontalAlignment="Right" Margin="0,0,10,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
             <Button x:Name="zminus" Content="Descend" HorizontalAlignment="Left" Margin="10,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
             <Button x:Name="kill" Content="Kill all Thrusters" HorizontalAlignment="Center" VerticalAlignment="Bottom" RequestedTheme="Dark" Margin="0,100,0,0" Click="override_click" Width="200"/>
-            <TextBlock x:Name="textBlock" HorizontalAlignment="Center" Text="Headlight Brightness" TextWrapping="Wrap" VerticalAlignment="Top" Width="250" TextAlignment="Center" RequestedTheme="Dark"  Height="19" />
-            <Slider x:Name="slider" HorizontalAlignment="Center" VerticalAlignment="Top" Width="250" RequestedTheme="Dark" ValueChanged="brightness" Height="33" Margin="835,10,835,0"  />
         </Grid>
-
     </Grid>
 </Page>
