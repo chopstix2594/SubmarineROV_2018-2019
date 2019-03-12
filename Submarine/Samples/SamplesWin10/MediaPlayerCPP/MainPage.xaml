@@ -1,0 +1,78 @@
+﻿<!--
+Ryan Baszkowski, Brennan Lambert, Nathan Loughner
+EGR ECE 486 w/ Dr. Jenkins, Dr. Shultz, Dr. Shaw, and Dr. Wright
+Submarine Remote Operated Vehicle Project
+For client Dr. Anthony Choi
+With Dr. Choi, Dr. Fu, and Dr. Sumner as advisiors
+And with Dr. Wright as project manager
+    Submarine ROV Network Remote Controller
+    Layout Markup File
+First build on 23 January 2019
+    
+See the comments in Mainpage.xaml.cpp for an introduction
+    
+You declare all the elements of the GUI in this XAML, and code what they do in the .cpp file.
+Dragging thing in here from the toolbox on your left should take care of the declaration automatically
+To actually code the behavior of something, click the element, and then the lightning button in the properties box on the right.
+Pick which action you want to code behavior for ("Click," for example"), type a name for the function, and a skeleton for that function
+will be automatically placed in the C++ program for you to code it out to your heart's content.
+-->
+
+<Page
+    x:Class="Submarine.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Submarine"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="DarkSlateGray">
+
+    <Grid KeyDown="kbdInput" KeyUp="kbdRelease">
+        <MediaElement x:Name="camfeed" HorizontalAlignment="Stretch"  VerticalAlignment="Stretch" AreTransportControlsEnabled="False" AutoPlay="True" AudioCategory="ForegroundOnlyMedia" Visibility="Visible" MediaFailed="camfail"/>
+        <TextBlock x:Name="servos" Margin="0,32,0,197" Text="Null ESC data." TextWrapping="Wrap" Visibility="Visible" RequestedTheme="Dark" HorizontalAlignment="Right" Width="960" FontSize="14" RenderTransformOrigin="0.5,0.5" TextAlignment="Right" VerticalAlignment="Stretch"/>
+        <TextBlock x:Name="sensors" Margin="0,31,0,200" Text="Null sensor data." TextWrapping="Wrap" Visibility="Visible" RequestedTheme="Dark" HorizontalAlignment="Left" Width="960" FontSize="14" RenderTransformOrigin="0.5,0.5" VerticalAlignment="Stretch"/>
+        <Button x:Name="sensorData" Content="Hide Sensor and ESC Data" HorizontalAlignment="Left" VerticalAlignment="Top" Click="sensorData_click" Height="31" Width="198" RequestedTheme="Dark" Margin="550,0,0,0"/>
+        <Button x:Name="controls" Content="Hide On-Screen Controls" HorizontalAlignment="Left" VerticalAlignment="Top" Click="controls_click" Height="31" Width="185" RequestedTheme="Dark" Margin="749,0,0,0"/>
+        <Button x:Name="manualcont" Content="Show ESC Overrides" HorizontalAlignment="Left" VerticalAlignment="Top" Height="31" Width="157" RequestedTheme="Dark" Margin="935,0,0,0" Click="Manualcont_Click"/>
+        <Button x:Name="xboxc" Content="Enable Gamepad" HorizontalAlignment="Left" VerticalAlignment="Top" Height="31" Width="133" RequestedTheme="Dark" Margin="1093,0,0,0" Click="Xboxc_Click"/>
+        <Button x:Name="connect" Content="Connect Submarine ROV" HorizontalAlignment="Left" VerticalAlignment="Top" RequestedTheme="Dark" Click="connect_click" Height="31" Width="183"/>
+        <TextBox x:Name="camip" HorizontalAlignment="Left" Text="192.168.1.189" VerticalAlignment="Top" Width="112" Height="33" Margin="437,0,0,0"/>
+        <TextBox x:Name="contip" HorizontalAlignment="Left" Margin="261,0,0,0" Text="192.168.1.182" VerticalAlignment="Top" Width="112" Height="33"/>
+        <TextBlock x:Name="Controller" HorizontalAlignment="Left" Text="Controller: " RequestedTheme="Dark" TextWrapping="Wrap" VerticalAlignment="Top" Height="19" Width="74" Margin="186,6,0,0"/>
+        <TextBlock x:Name="Camera" HorizontalAlignment="Left" Margin="378,6,0,0" Text="Camera: " RequestedTheme="Dark" TextWrapping="Wrap" VerticalAlignment="Top" Height="19" Width="59"/>
+        <Grid x:Name="ESCOverrides" Height="195" VerticalAlignment="Bottom" Visibility="Collapsed" Grid.ColumnSpan="2">
+            <Button x:Name="leftplus" Content="Left +" HorizontalAlignment="Left" Margin="90,0,0,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"  Click="override_click"/>
+            <Button x:Name="leftminus" Content="Left -" HorizontalAlignment="Left" Margin="90,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"  Click="override_click"/>
+            <Button x:Name="topminus" Content="Top -" HorizontalAlignment="Left" Margin="238,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="topplus" Content="Top +" HorizontalAlignment="Left" Margin="238,0,0,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="frontplus" Content="Front +" HorizontalAlignment="Left" Margin="383,0,0,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="frontminus" Content="Front -" HorizontalAlignment="Left" Margin="383,0,0,51" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="backminus" Content="Back -" HorizontalAlignment="Right" Margin="0,0,383,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="backplus" Content="Back +" HorizontalAlignment="Right" Margin="0,0,383,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="bottomminus" Content="Bottom -" HorizontalAlignment="Right" Margin="0,0,238,51" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="bottomplus" Content="Bottom +" HorizontalAlignment="Right" Margin="0,0,238,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="rightplus" Content="Right +" HorizontalAlignment="Right" Margin="0,0,94,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="rightminus" Content="Right -" HorizontalAlignment="Right" Margin="0,0,94,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="override_click"/>
+            <Button x:Name="killov" Content="Kill all Thrusters" HorizontalAlignment="Center" VerticalAlignment="Bottom" RequestedTheme="Dark" Margin="0,100,0,0" Click="override_click" Width="200"/>
+        </Grid>
+        <Grid x:Name="OSControls" Height="195" VerticalAlignment="Bottom" Visibility="Visible" Grid.ColumnSpan="2">
+            <Button x:Name="xplus" Content="Forward" HorizontalAlignment="Left" Margin="96,0,0,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="yminus" Content="Left" HorizontalAlignment="Left" Margin="10,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="xminus" Content="Backward" HorizontalAlignment="Left" Margin="96,0,0,10" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="yplus" Content="Right" HorizontalAlignment="Left" Margin="184,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="pitchplus" Content="Pitch Up" HorizontalAlignment="Right" Margin="0,0,96,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="yawminus" Content="Yaw Left" HorizontalAlignment="Right" Margin="0,0,184,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="pitchminus" Content="Pitch Down" HorizontalAlignment="Right" Margin="0,0,96,10" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="yawplus" Content="Yaw Right" HorizontalAlignment="Right" Margin="0,0,10,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="rollminus" Content="Roll Counterclockwise" HorizontalAlignment="Left" Margin="124,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="160"/>
+            <Button x:Name="rollplus" Content="Roll Clockwise" HorizontalAlignment="Right" Margin="0,0,123,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="160"/>
+            <Button x:Name="zplus" Content="Ascend" HorizontalAlignment="Right" Margin="0,0,10,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="zminus" Content="Descend" HorizontalAlignment="Left" Margin="10,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
+            <Button x:Name="kill" Content="Kill all Thrusters" HorizontalAlignment="Center" VerticalAlignment="Bottom" RequestedTheme="Dark" Margin="0,100,0,0" Click="override_click" Width="200"/>
+            <TextBlock x:Name="textBlock" HorizontalAlignment="Center" Text="Headlight Brightness" TextWrapping="Wrap" VerticalAlignment="Top" Width="250" TextAlignment="Center" RequestedTheme="Dark"  Height="19" />
+            <Slider x:Name="slider" HorizontalAlignment="Center" VerticalAlignment="Top" Width="250" RequestedTheme="Dark" ValueChanged="brightness" Height="33" Margin="835,10,835,0"  />
+        </Grid>
+
+    </Grid>
+</Page>
