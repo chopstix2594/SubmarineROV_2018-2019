@@ -202,7 +202,7 @@ void Submarine::MainPage::brightness(Platform::Object^ sender, Windows::UI::Xaml
 	servToScreen();
 }
 
-//Handle clicking of the servo override buttons
+// Handle clicking of the servo override buttons
 void Submarine::MainPage::override_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (((Button^)sender)->Name == "leftplus")
@@ -333,9 +333,9 @@ void Submarine::MainPage::pollPad(Object^ sender, Object^ e) {
 		c_q = true;
 	if (state.RightTrigger > deadzone)
 		c_e = true;
-	if (state.Buttons.ToString == "LeftShoulder")
+	if (state.Buttons.ToString() == "LeftShoulder")
 		c_sh = true;
-	if (state.Buttons.ToString == "RightShoulder")
+	if (state.Buttons.ToString() == "RightShoulder")
 		c_sp = true;
 	if (!state.LeftThumbstickY < -deadzone)
 		c_w = false;
@@ -357,7 +357,7 @@ void Submarine::MainPage::pollPad(Object^ sender, Object^ e) {
 		c_q = false;
 	if (!state.RightTrigger > deadzone)
 		c_e = false;
-	if (state.Buttons.ToString == "None"){
+	if (state.Buttons.ToString() == "None"){
 		c_sh = false;
 		c_sp = false;
 	}
