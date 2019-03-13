@@ -35,12 +35,14 @@ namespace Submarine
 		void connect_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void kbdInput(Platform::Object^ sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e);
 		void kbdRelease(Platform::Object^ sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs^ e);
+		void oscontroller_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void Manualcont_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void override_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void brightness(Platform::Object^ sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs^ e);
 		void Xboxc_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
 		void pollPad(Object^ sender, Object^ e);
 		void camfail(Platform::Object^ sender, Windows::UI::Xaml::ExceptionRoutedEventArgs^ e);
+		void controlconv(Object^ sender, Object^ e);
 
 		void sendRequest(Object^, Object^);
 		void codeParse(std::wstring);

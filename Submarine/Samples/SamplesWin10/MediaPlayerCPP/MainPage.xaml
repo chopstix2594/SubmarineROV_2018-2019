@@ -59,19 +59,19 @@ will be automatically placed in the C++ program for you to code it out to your h
             <Button x:Name="killov" Content="Kill all Thrusters" HorizontalAlignment="Center" VerticalAlignment="Bottom" RequestedTheme="Dark" Margin="0,100,0,0" Click="override_click" Width="200"/>
         </Grid>
         <Grid x:Name="OSControls" Height="195" VerticalAlignment="Bottom" Visibility="Visible" Grid.ColumnSpan="2">
-            <Button x:Name="xplus" Content="Forward" HorizontalAlignment="Left" Margin="96,0,0,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="yminus" Content="Left" HorizontalAlignment="Left" Margin="10,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="xminus" Content="Backward" HorizontalAlignment="Left" Margin="96,0,0,10" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="yplus" Content="Right" HorizontalAlignment="Left" Margin="184,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="pitchplus" Content="Pitch Up" HorizontalAlignment="Right" Margin="0,0,96,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="yawminus" Content="Yaw Left" HorizontalAlignment="Right" Margin="0,0,184,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="pitchminus" Content="Pitch Down" HorizontalAlignment="Right" Margin="0,0,96,10" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="yawplus" Content="Yaw Right" HorizontalAlignment="Right" Margin="0,0,10,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="rollminus" Content="Roll Counterclockwise" HorizontalAlignment="Left" Margin="124,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="166"/>
-            <Button x:Name="rollplus" Content="Roll Clockwise" HorizontalAlignment="Right" Margin="0,0,123,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="160"/>
-            <Button x:Name="zplus" Content="Ascend" HorizontalAlignment="Right" Margin="0,0,10,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="zminus" Content="Descend" HorizontalAlignment="Left" Margin="10,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100"/>
-            <Button x:Name="kill" Content="Kill all Thrusters" HorizontalAlignment="Center" VerticalAlignment="Bottom" RequestedTheme="Dark" Margin="0,100,0,0" Click="override_click" Width="200"/>
+            <Button x:Name="yplus" Content="Forward" HorizontalAlignment="Left" Margin="96,0,0,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="xminus" Content="Left" HorizontalAlignment="Left" Margin="10,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="yminus" Content="Backward" HorizontalAlignment="Left" Margin="96,0,0,10" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="xplus" Content="Right" HorizontalAlignment="Left" Margin="184,0,0,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="pitchplus" Content="Pitch Up" HorizontalAlignment="Right" Margin="0,0,96,97" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="yawminus" Content="Yaw Left" HorizontalAlignment="Right" Margin="0,0,184,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="pitchminus" Content="Pitch Down" HorizontalAlignment="Right" Margin="0,0,96,10" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="yawplus" Content="Yaw Right" HorizontalAlignment="Right" Margin="0,0,10,52" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="rollminus" Content="Roll Counterclockwise" HorizontalAlignment="Left" Margin="124,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="166" Click="oscontroller_click"/>
+            <Button x:Name="rollplus" Content="Roll Clockwise" HorizontalAlignment="Right" Margin="0,0,123,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="160" Click="oscontroller_click"/>
+            <Button x:Name="zplus" Content="Ascend" HorizontalAlignment="Right" Margin="0,0,10,155" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="zminus" Content="Descend" HorizontalAlignment="Left" Margin="10,0,0,156" VerticalAlignment="Bottom" RequestedTheme="Dark" Width="100" Click="oscontroller_click"/>
+            <Button x:Name="kill" Content="Kill all Thrusters" HorizontalAlignment="Center" VerticalAlignment="Bottom" RequestedTheme="Dark" Margin="0,100,0,0" Width="200" Click="oscontroller_click"/>
         </Grid>
     </Grid>
 </Page>

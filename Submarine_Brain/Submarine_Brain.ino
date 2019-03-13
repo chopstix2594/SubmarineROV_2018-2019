@@ -31,6 +31,7 @@ int nback = 1500;
 int nbottom = 1500;
 int nright = 1500;
 int nlight = 1100;
+int arr[7];
 
 // Sensors
 MS5837 Bar30;
@@ -183,24 +184,32 @@ void codeParse(String item){
       i++;
     }
     //Serial.println(temp);
-    if(c = 0)
-      left.writeMicroseconds(temp.toInt());
-    else if(count = 1)
-      top.writeMicroseconds(temp.toInt());
-    else if(count = 2)
-      front.writeMicroseconds(temp.toInt());
-    else if(count = 3)
-      back.writeMicroseconds(temp.toInt());
-    else if(count = 4)
-      bottom.writeMicroseconds(temp.toInt());
-    else if(count = 5)
-      right.writeMicroseconds(temp.toInt());
-    else if(count = 6)
-      light.writeMicroseconds(temp.toInt());
+    arr[count] = temp.toInt();
     temp = "";
     count++;
     i++;
   }
+//  Serial.println("Left: ");
+//  Serial.println(arr[0]);
+//  Serial.println("Top: ");
+//  Serial.println(arr[1]);
+//  Serial.println("Front: ");
+//  Serial.println(arr[2]);
+//  Serial.println("Back: ");
+//  Serial.println(arr[3]);
+//  Serial.println("Bottom: ");
+//  Serial.println(arr[4]);
+//  Serial.println("Right: ");
+//  Serial.println(arr[5]);
+//  Serial.println("Light: ");
+//  Serial.println(arr[6]);
+  left.writeMicroseconds(arr[0]);
+  top.writeMicroseconds(arr[1]);
+  front.writeMicroseconds(arr[2]);
+  back.writeMicroseconds(arr[3]);
+  bottom.writeMicroseconds(arr[4]);
+  right.writeMicroseconds(arr[5]);
+  light.writeMicroseconds(arr[6]);
   i = 0;
   count = 0;
 }
