@@ -9,7 +9,7 @@ https://drive.google.com/open?id=1T8Uh6GV0HjEKu9xRt5F1R8sCDmDm1KGB
 ## Sub-projects contained:
 ### Submarine
 GUI drone piloting interface for the Submarine ROV\
-Universal Windows Program (UWP) x86 and x86_64\
+Universal Windows Program (UWP) x86 and x86_64 (Maybe ARM/ARM64? It should work...)\
 Written in C++/CX (Visual C++)\
 Requires Windows 10 with Anniversary Update at minimum (Build 14393)\
 Building from Source requires Visual Studio 2017 and the C++ Universal Windows Development Package
