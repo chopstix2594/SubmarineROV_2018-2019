@@ -12,8 +12,7 @@ GUI drone piloting interface for the Submarine ROV\
 Universal Windows Program (UWP) x86 and x86_64\
 Written in C++/CX (Visual C++)\
 Requires Windows 10 with Anniversary Update at minimum (Build 14393)\
-Building from Source requires Visual Studio 2017\
--with the C++ Universal Windows Development Package
+Building from Source requires Visual Studio 2017 and the C++ Universal Windows Development Package
 ### Submarine_Brain
 Arduino sketch for the Submarine ROV's internal controller\
 For Arduino MEGA and compatibles\
