@@ -67,7 +67,24 @@ using namespace Windows::UI::Popups; // To yell at the user when things go wrong
 auto client = ref new HttpClient(); // Object which handles network communication
 String^ camAddr = "192.168.1.189"; // Camera URL, this is the manufacturer's default
 String^ contAddr = "192.168.1.182"; // Arduino URL, this is the static IP assigned
-bool showtime = false;
+
+//// Dispatcher Timers, which loop certain functions
+DispatcherTimer^ network_timer; // Network communication timer
+DispatcherTimer^ gamepad_timer; // Gamepad polling timer
+DispatcherTimer^ movement_timer; // Digital controls timer
+
+//// For mouse and keyboard controls
+float digital_threshold = 0.375; // Percentage of max power to use for digital inputs (mouse, keyboard)
+int digital_difference = 100; // How much to add or subtract from 1500 for ESC control, calculated from digital_threshold upon initialization
+
+//// For gamepad controls
+Gamepad^ gamepad = nullptr; // Instantiate the gamepad class so we can get the list of connected gamepads later
+float analog_threshold = 0.4; // Max percentage of power to use for analog input (xinput gamepad)
+float deadzone = 0.10; // Analog deadzone
+int x, y, z, pitch, yaw, roll; // Desired axes movement values, applied to thrusters in poll_pad
+
+// Thrusters are less effective backwards, ratio to compensate
+float back_comp = 0.1;
 
 // Sensor Data
 String^ internalTemp;
@@ -87,9 +104,7 @@ int left = 1500, top = 1500, front = 1500, back = 1500, bottom = 1500, right = 1
 bool c_w = false, c_a = false, c_s = false, c_d = false, c_i = false, c_j = false, c_k = false,
 c_l = false, c_q = false, c_e = false, c_sh = false, c_sp = false;
 
-// Gamepad Stuff
-Gamepad^ gamepad = nullptr; // Instantiate the gamepad class so we can get the list of connected gamepads later
-double deadzone = 0.35; // Deadzone for the analog sticks to activate
+
 
 MainPage::MainPage()
 {
@@ -100,13 +115,50 @@ MainPage::MainPage()
 	contip->Text = contAddr;
 	camip->Text = camAddr;
 
-	// Here's where we actually move the submarine based on the user's input
-	auto timer = ref new DispatcherTimer(); // Create a timer on which to convert the global control booleans to actual servo movement
+	network_timer = ref new DispatcherTimer(); // Initialize global objects
+	gamepad_timer = ref new DispatcherTimer();
+	movement_timer = ref new DispatcherTimer();
+
+	// Here's where we actually move the submarine based on the user's input (DIGITAL INPUTS ONLY)
 	TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
-	ts.Duration = 100000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
-	timer->Interval = ts; // Set the interval
-	auto doit = timer->Tick += ref new EventHandler<Object^>(this, &MainPage::controlconv); // Attach conversion to the timer
-	timer->Start(); // Start the timer
+	ts.Duration = 166667; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 16.667 ms, or one frame at 60 Hz
+	movement_timer->Interval = ts; // Set the interval
+	auto doit = movement_timer->Tick += ref new EventHandler<Object^>(this, &MainPage::controlconv); // Attach conversion to the timer
+	movement_timer->Start(); // Start the timer
+
+	// Do some simple calculations we only need to do once
+	digital_difference = 400 * digital_threshold;
+
+	// Yell at the user
+	auto welcome = ref new MessageDialog("Welcome to the Submarine!\n\n" +
+	"Please keep a few things in mind:\n" +
+	"If you wish to use a gamepad, you must attach it to the system BEFORE starting this software.\n" +
+	"Gamepads must be xinput compatible. (Xbox One and Xbox 360 gamepads and compatibles)\n" +
+	"Press \"Enable Gamepad\" in the top-right to use an attached gamepad for control.\n" +
+	"Note that using a gamepad disables keyboard and on-screen button controls.\n\n"
+	"ON-SCREEN BUTTON CONTROLS ARE STICKY:\n" +
+	"Make sure to use the \"Kill all Thrusters\" button to stop thruster movement.\n\n" +
+	"KEYBOARD CONTROLS:\n" +
+	"W = Move Forwards (Y+)\n" +
+	"S = Move Backwards (Y-)\n"
+	"A = Strafe Left (X-)\n"
+	"D = Strafe Right (X+)\n" +
+	"O = Ascend (Z+)\n" +
+	"U = Descend (Z-)\n" +
+	"J = Turn Left (Yaw-)\n" +
+	"L = Turn Right (Yaw+)\n" +
+	"I = Point Up (Pitch+)\n" +
+	"K = Point Down (Pitch-)\n"
+	"E = Twist Clockwise (Roll+)\n" +
+	"Q = Twist Counterclockwise (Roll-)\n\n" +
+	"GAMEPAD CONTROLS:\n" +
+	"Left Analog Stick = Forwards and Backwards, Strafe Left and Right (Y and X)\n" +
+	"Right Analog Stick = Turn Left, Right, Up, and Down (Yaw and Pitch)\n" +
+	"Bumpers = Ascend and Descend (Z)\n" +
+	"Triggers = Twist (Roll)\n\n" +
+	"Press \"Connect Submarine ROV\" in the top-left to get started piloting.\n" +
+	"You should only need to override the IP addresses if you have changed hardware.");
+	welcome->ShowAsync();
 }
 
 //////////////////////////////////////////////GUI EVENT HANDLERS/////////////////////////////////////////////
@@ -158,12 +210,11 @@ void Submarine::MainPage::connect_click(Platform::Object^ sender, Windows::UI::X
 	contAddr = contip->Text;
 
 	// Connect the Arduino and begin communication
-	auto timer = ref new DispatcherTimer(); // Create a timer on which to talk to the Arduino. This is the easiest way to loop code in GUI
 	TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
 	ts.Duration = 250000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
-	timer->Interval = ts; // Set the interval
-	auto doit = timer->Tick += ref new EventHandler<Object^>(this, &MainPage::sendRequest); // Attach network communication to the timer
-	timer->Start(); // Start the timer
+	network_timer->Interval = ts; // Set the interval
+	auto doit = network_timer->Tick += ref new EventHandler<Object^>(this, &MainPage::sendRequest); // Attach network communication to the timer
+	network_timer->Start(); // Start the timer
 
 	// Connect the camera and display its feed
 	// Make a string for the full address for the RTSP stream.
@@ -265,29 +316,29 @@ void Submarine::MainPage::oscontroller_click(Platform::Object^ sender, Windows::
 void Submarine::MainPage::override_click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e)
 {
 	if (((Button^)sender)->Name == "leftplus")
-		left = 1650;
+		left = 1500 + digital_difference;
 	if (((Button^)sender)->Name == "topplus")
-		top = 1650;
+		top = 1500 + digital_difference;
 	if (((Button^)sender)->Name == "frontplus")
-		front = 1650;
+		front = 1500 + digital_difference;
 	if (((Button^)sender)->Name == "backplus")
-		back = 1650;
+		back = 1500 + digital_difference;
 	if (((Button^)sender)->Name == "bottomplus")
-		bottom = 1650;
+		bottom = 1500 + digital_difference;
 	if (((Button^)sender)->Name == "rightplus")
-		right = 1650;
+		right = 1500 + digital_difference;
 	if (((Button^)sender)->Name == "leftminus")
-		left = 1350;
+		left = 1500 - digital_difference;
 	if (((Button^)sender)->Name == "topminus")
-		top = 1350;
+		top = 1500 - digital_difference;
 	if (((Button^)sender)->Name == "frontminus")
-		front = 1350;
+		front = 1500 - digital_difference;
 	if (((Button^)sender)->Name == "backminus")
-		back = 1350;
+		back = 1500 - digital_difference;
 	if (((Button^)sender)->Name == "bottomminus")
-		bottom = 1350;
+		bottom = 1500 - digital_difference;
 	if (((Button^)sender)->Name == "rightminus")
-		right = 1350;
+		right = 1500 - digital_difference;
 	if (((Button^)sender)->Name == "kill" || ((Button^)sender)->Name == "killov") { // Make sure the kill button kills everything
 		left = 1500;
 		top = 1500;
@@ -368,12 +419,13 @@ void Submarine::MainPage::Xboxc_Click(Platform::Object^ sender, Windows::UI::Xam
 {
 	if (gamepad->Gamepads->Size > 0) {
 		gamepad = gamepad->Gamepads->GetAt(0); // Turn our gamepad global variable into our actual gamepad
-		auto timer = ref new DispatcherTimer(); // Create a timer on which to poll the gamepad, just like we did with the network communication
+		movement_timer->Stop(); // Stop the digital controls from happening
 		TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
-		ts.Duration = 100000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
-		timer->Interval = ts; // Set the interval
-		auto doit = timer->Tick += ref new EventHandler<Object^>(this, &MainPage::pollPad); // Attach gamepad polling to the timer
-		timer->Start(); // Start the timer
+		ts.Duration = 166667; // Poll the gamepad once per frame at 60 Hz
+		//ts.Duration = 10000; // Poll the gamepad at 1000 Hz because why not
+		gamepad_timer->Interval = ts; // Set the interval
+		auto doit = gamepad_timer->Tick += ref new EventHandler<Object^>(this, &MainPage::pollPad); // Attach gamepad polling to the timer
+		gamepad_timer->Start(); // Start the timer
 		// Hide and disable the other controls because the gamepad interferes with them.
 		OSControls->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
 		ESCOverrides->Visibility = Windows::UI::Xaml::Visibility::Collapsed;
@@ -383,59 +435,57 @@ void Submarine::MainPage::Xboxc_Click(Platform::Object^ sender, Windows::UI::Xam
 
 }
 
-// Get the state of the gamepad, map that to our global control booleans
+// Get the state of the gamepad, map that to our thrusters
 void Submarine::MainPage::pollPad(Object^ sender, Object^ e) {
 	auto state = gamepad->GetCurrentReading(); // Read the state of the gamepad
-	// Thumbsticks
-	if (state.LeftThumbstickY > deadzone) // Left stick is pushed forward
-		c_w = true;
-	else if (state.LeftThumbstickY < -deadzone) // Left stick is pulled back
-		c_s = true;
-	else if (deadzone > state.LeftThumbstickY > -deadzone) { // Left stick is in the middle, no input
-		c_w = false;
-		c_s = false;
-	}
-	if (state.LeftThumbstickX > deadzone)
-		c_d = true;
-	else if (state.LeftThumbstickX < -deadzone)
-		c_a = true;
-	else if (deadzone > state.LeftThumbstickX > -deadzone) {
-		c_d = false;
-		c_a = false;
-	}
-	if (state.RightThumbstickY > deadzone)
-		c_i = true;
-	else if (state.RightThumbstickY < -deadzone)
-		c_k = true;
-	else if (deadzone > state.RightThumbstickY > -deadzone) {
-		c_i = false;
-		c_k = false;
-	}
-	if (state.RightThumbstickX > deadzone)
-		c_l = true;
-	else if (state.RightThumbstickX < -deadzone)
-		c_j = true;
-	else if (deadzone > state.RightThumbstickX > -deadzone) {
-		c_l = false;
-		c_j = false;
-	}
-	// Triggers and bumpers
-	if (state.LeftTrigger > deadzone)
-		c_q = true;
-	else c_q = false;
-	if (state.RightTrigger > deadzone)
-		c_e = true;
-	else c_e = false;
+	// Left and right thrusters, which facilitate Y and Yaw axes
+	if (state.LeftThumbstickY > deadzone || state.LeftThumbstickY < -deadzone)
+		y = 400 * analog_threshold * state.LeftThumbstickY;
+	else if (deadzone > state.LeftThumbstickY > -deadzone)
+		y = 0;
+	if (-deadzone > state.RightThumbstickX || state.RightThumbstickX > deadzone)
+		yaw = 400 * analog_threshold * state.RightThumbstickX;
+	else
+		yaw = 0;
+	left = 1500 + y + yaw;
+	right = 1500 + y - yaw;
+	// Top and bottom thrusters, which facilitate X and Roll axes
+	if (state.LeftThumbstickX > deadzone || state.LeftThumbstickX < -deadzone)
+		x = 400 * analog_threshold * -state.LeftThumbstickX;
+	else if (deadzone > state.LeftThumbstickX > -deadzone)
+		x = 0;
+	if (state.LeftTrigger > deadzone|| state.RightTrigger > deadzone)
+		roll = 400 * analog_threshold * (state.LeftTrigger - state.RightTrigger);
+	else
+		roll = 0;
+	top = 1500 + x + roll;
+	bottom = 1500 + x - roll;
+	// Front and back thrusters, which facilitate Z and Pitch axes
 	if (state.Buttons.ToString() == "LeftShoulder") // The Buttoms come in some strange bitwise-combined enumeration that I DONT
-		c_sh = true;								// have the time to figure out... this works is really gross
-	else c_sh = false;
-	if (state.Buttons.ToString() == "RightShoulder")
-		c_sp = true;
-	else c_sp = false;
-	if (!state.LeftTrigger > deadzone)
-		c_q = false;
-	if (!state.RightTrigger > deadzone)
-		c_e = false;
+		z = 400 * analog_threshold * -1;		    // have the time to figure out... this works but is really gross
+	else if (state.Buttons.ToString() == "RightShoulder")
+		z = 400 * analog_threshold * 1;
+	else z = 0;
+	if (-deadzone > state.RightThumbstickY || state.RightThumbstickY > deadzone)
+		pitch = 400 * analog_threshold * state.RightThumbstickY;
+	else
+		pitch = 0;
+	front = 1500 + z + pitch;
+	back = 1500 + z - pitch;
+	// Compensate for the fact that the thrusters are less powerful spinning backwards
+	if (left < 1500)
+		left -= 400 * analog_threshold * back_comp;
+	if (top < 1500)
+		top -= 400 * analog_threshold * back_comp;
+	if (front < 1500)
+		front -= 400 * analog_threshold * back_comp;
+	if (back < 1500)
+		back -= 400 * analog_threshold * back_comp;
+	if (bottom < 1500)
+		bottom -= 400 * analog_threshold * back_comp;
+	if (right < 1500)
+		right -= 400 * analog_threshold * back_comp;
+	servToScreen();
 }
 
 // Handling the MediaElement screwing up. Not necessary, but failing silently is non-ideal
@@ -448,22 +498,22 @@ void Submarine::MainPage::camfail(Platform::Object^ sender, Windows::UI::Xaml::E
 void Submarine::MainPage::controlconv(Object^ sender, Object^ e) {
 	// Left and right thrusters, which facilitate Y and Yaw axes
 	if (c_w) { // Y (forward and backward)
-		left = 1650;
-		right = 1650;
+		left = 1500 + digital_difference;
+		right = 1500 + digital_difference;
 
 	}
 	if (c_s) {
-		left = 1350;
-		right = 1350;
+		left = 1500 - digital_difference;
+		right = 1500 - digital_difference;
 
 	}
 	if (c_j) { // Yaw (steering left and right)
-		left = 1350;
-		right = 1650;
+		left = 1500 - digital_difference;
+		right = 1500 + digital_difference;
 	}
 	if (c_l) {
-		left = 1650;
-		right = 1350;
+		left = 1500 + digital_difference;
+		right = 1500 - digital_difference;
 	}
 	if (!(c_w || c_s || c_j || c_l)) { // Remember to turn stuff off
 		left = 1500;
@@ -471,46 +521,59 @@ void Submarine::MainPage::controlconv(Object^ sender, Object^ e) {
 	}
 	// Top and bottom thrusters, which facilitate X and Roll axes
 	if (c_a) { // X (strafing left and right)
-		top = 1650;
-		bottom = 1650;
+		top = 1500 + digital_difference;
+		bottom = 1500 + digital_difference;
 	}
 	if (c_d) {
-		top = 1350;
-		bottom = 1350;
+		top = 1500 - digital_difference;
+		bottom = 1500 - digital_difference;
 	}
 	if (c_q) { // Roll (twisting clockwise and counterclockwise)
-		top = 1650;
-		bottom = 1350;
+		top = 1500 + digital_difference;
+		bottom = 1500 - digital_difference;
 	}
 	if (c_e) {
-		top = 1350;
-		bottom = 1650;
+		top = 1500 - digital_difference;
+		bottom = 1500 + digital_difference;
 	}
 	if (!(c_a || c_d || c_q || c_e)) { // Remember to turn stuff off
 		top = 1500;
 		bottom = 1500;
 	}
-	// Front and back thrusters, which facilitate Z and Roll axes
+	// Front and back thrusters, which facilitate Z and Pitch axes
 	if (c_sp) { // Z (ascending and descending)
-		front = 1650;
-		back = 1650;
+		front = 1500 + digital_difference;
+		back = 1500 + digital_difference;
 	}
 	if (c_sh) {
-		front = 1350;
-		back = 1350;
+		front = 1500 - digital_difference;
+		back = 1500 - digital_difference;
 	}
 	if (c_i) { // Pitch (pointing up and down)
-		front = 1650;
-		back = 1350;
+		front = 1500 + digital_difference;
+		back = 1500 - digital_difference;
 	}
 	if (c_k) {
-		front = 1350;
-		back = 1650;
+		front = 1500 - digital_difference;
+		back = 1500 + digital_difference;
 	}
 	if (!(c_sp || c_sh || c_i || c_k)) { // Remember to turn stuff off
 		front = 1500;
 		back = 1500;
 	}
+	// Compensate for the fact that the thrusters are less powerful spinning backwards
+	if (left < 1500)
+		left -= 400 * analog_threshold * back_comp;
+	if (top < 1500)
+		top -= 400 * analog_threshold * back_comp;
+	if (front < 1500)
+		front -= 400 * analog_threshold * back_comp;
+	if (back < 1500)
+		back -= 400 * analog_threshold * back_comp;
+	if (bottom < 1500)
+		bottom -= 400 * analog_threshold * back_comp;
+	if (right < 1500)
+		right -= 400 * analog_threshold * back_comp;
 	servToScreen();
 }
 
