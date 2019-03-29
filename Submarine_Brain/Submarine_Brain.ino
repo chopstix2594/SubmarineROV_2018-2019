@@ -10,6 +10,7 @@
 
 #include <Ethernet.h>
 #include <Servo.h>
+#include <Wire.h>
 #include "MS5837.h"
 #include <Adafruit_BNO055.h>
 #include <Adafruit_Sensor.h>
@@ -35,9 +36,7 @@ int arr[7];
 
 // Sensors
 MS5837 Bar30;
-const int ad8495 = A15;
 Adafruit_BNO055 bno = Adafruit_BNO055(22);
-const int waterSens = 23;
 
 // Sensor Values
 int internalTemp;
@@ -77,21 +76,23 @@ void setup() {
   Bar30.init();
   Bar30.setFluidDensity(997); // Value for freshwater
 
-  // Attaching Interrupts
-  attachInterrupt(digitalPinToInterrupt(waterSens), ohNo, FALLING);
-
   // PinMode Configuration
   pinMode(A15,INPUT);
-  pinMode(23,INPUT_PULLUP);
+  pinMode(A8,INPUT_PULLUP);
+  pinMode(A9,INPUT_PULLUP);
 
+  // Attaching Interrupts
+  attachInterrupt(digitalPinToInterrupt(A8), ohNo, FALLING);
+  attachInterrupt(digitalPinToInterrupt(A9), ohNo, FALLING);
+  
   // Servo Configuration
-  light.attach(15); // The Lumen LED light's PWM control is designed to be compatible with the servo library
-  left.attach(16);
-  top.attach(17);
-  front.attach(18);
-  back.attach(19);
-  bottom.attach(20);
-  right.attach(21);
+  light.attach(23); // The Lumen LED light's PWM control is designed to be compatible with the servo library
+  left.attach(51);
+  top.attach(49);
+  front.attach(47);
+  back.attach(45);
+  bottom.attach(43);
+  right.attach(41);
   
   left.writeMicroseconds(1500); // Write neutral values for the ESCs to initialize
   top.writeMicroseconds(1500);
@@ -139,6 +140,10 @@ void webServer(){
           client.print(y_o,4);
           client.print('#');
           client.print(z_o,4);
+          if(water)
+            client.print("WATER");
+          else
+            client.print("SAFE");
           break;
           }
         else
@@ -157,7 +162,7 @@ void webServer(){
 }
 
 void readSensors(){
-  internalTemp = analogRead(ad8495);
+  internalTemp = analogRead(A15);
   externalTemp = Bar30.temperature();
   pressure = Bar30.pressure();
   depth = Bar30.depth();
