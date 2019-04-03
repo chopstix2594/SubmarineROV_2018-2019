@@ -36,18 +36,22 @@ int arr[7];
 
 // Sensors
 MS5837 Bar30;
-Adafruit_BNO055 bno = Adafruit_BNO055(22);
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 // Sensor Values
+int thermoread;
+float thermovolts;
 int internalTemp;
-int externalTemp;
-int pressure;
-int depth;
-int alt;
+float externalTemp;
+float pressure;
+float depth;
+float alt;
 float x_o;
 float y_o;
 float z_o;
 bool water;
+int wat1;
+int wat2;
 
 // String Parsing
 int i = 0;
@@ -70,20 +74,16 @@ void setup() {
   server.begin();
   //Serial.print("Server at ");
   //Serial.println(Ethernet.localIP());
-
-  // Other Steup
-  water = false;
+  bno.begin();
+  delay(1000);
+  bno.setExtCrystalUse(true);
   Bar30.init();
   Bar30.setFluidDensity(997); // Value for freshwater
 
   // PinMode Configuration
   pinMode(A15,INPUT);
-  pinMode(A8,INPUT_PULLUP);
-  pinMode(A9,INPUT_PULLUP);
-
-  // Attaching Interrupts
-  attachInterrupt(digitalPinToInterrupt(A8), ohNo, FALLING);
-  attachInterrupt(digitalPinToInterrupt(A9), ohNo, FALLING);
+  pinMode(A8,INPUT);
+  pinMode(A9,INPUT);
   
   // Servo Configuration
   light.attach(23); // The Lumen LED light's PWM control is designed to be compatible with the servo library
@@ -101,7 +101,7 @@ void setup() {
   bottom.writeMicroseconds(1500);
   right.writeMicroseconds(1500);
   light.writeMicroseconds(1100); // Write the "off" value for the light
-  delay(2500);
+  delay(5000);
   //Serial.println("It's showtime...");
 }
 
@@ -127,23 +127,23 @@ void webServer(){
           client.println();
           client.print(internalTemp);
           client.print('#');
-          client.print(externalTemp);
+          client.print(externalTemp,4);
           client.print('#');
-          client.print(pressure);
+          client.print(pressure,4);
           client.print('#');
-          client.print(depth);
+          client.print(depth,4);
           client.print('#');
-          client.print(alt);
+          client.print(alt,4);
           client.print('#');
           client.print(x_o,4);
           client.print('#');
           client.print(y_o,4);
           client.print('#');
           client.print(z_o,4);
-          if(water)
-            client.print("WATER");
-          else
-            client.print("SAFE");
+          client.print('#');
+          client.print(wat1);
+          client.print('#');
+          client.print(wat2);
           break;
           }
         else
@@ -162,7 +162,10 @@ void webServer(){
 }
 
 void readSensors(){
-  internalTemp = analogRead(A15);
+//  thermoread = analogRead(A15);
+//  thermovolts = thermoread * (5.0 / 1023.0);
+//  internalTemp = (thermovolts) / 0.005;
+
   externalTemp = Bar30.temperature();
   pressure = Bar30.pressure();
   depth = Bar30.depth();
@@ -173,10 +176,10 @@ void readSensors(){
   x_o = event.orientation.x;
   y_o = event.orientation.y;
   z_o = event.orientation.z;
-}
+  internalTemp = bno.getTemp();
 
-void ohNo(){
-  water = true;
+  wat1 = analogRead(A8);
+  wat2 = analogRead(A9);
 }
 
 void codeParse(String item){
