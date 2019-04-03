@@ -1,4 +1,4 @@
-﻿// Ryan Baszkowski, Brennan Lambert, Nathan Loughner
+// Ryan Baszkowski, Brennan Lambert, Nathan Loughner
 // ECE 486, ECE 487, MAE 487, w/ Dr. Jenkins, Dr. Shultz, Dr. Shaw, and Dr. Wright
 // Submarine Remote Operated Vehicle Project
 // For client Dr. Anthony Choi
@@ -26,7 +26,6 @@
 // While it is still C++ at its core, there are a lot of things which do not necessarily follow
 // ISO C++, and a few more that do not follow C++/CLI, used in WPF and Windows Forms.
 // I will attempt to point these things out and explain them in comments here.
-// In general, just because something works in regular C++, you can't assume it will work here.
 
 // Modified from Microsoft's default implementation of the MainPage in C++/CX,
 // available from them at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -58,7 +57,6 @@ using namespace Windows::UI::Xaml::Navigation;
 using namespace Windows::Web::Http; // For network communication
 using namespace Windows::Gaming::Input; // For gamepads
 using namespace concurrency; // For running tasks in the background, like network communication
-using namespace Platform::Collections; // For vectors
 using namespace FFmpegInterop; // For the video feed. Getting this working almost killed me
 using namespace Windows::Media::Core; // Further stuff for the camera
 using namespace Windows::UI::Popups; // To yell at the user when things go wrong
@@ -74,17 +72,17 @@ DispatcherTimer^ gamepad_timer; // Gamepad polling timer
 DispatcherTimer^ movement_timer; // Digital controls timer
 
 //// For mouse and keyboard controls
-float digital_threshold = 0.375; // Percentage of max power to use for digital inputs (mouse, keyboard)
-int digital_difference = 100; // How much to add or subtract from 1500 for ESC control, calculated from digital_threshold upon initialization
+float digital_threshold = 0.3; // Percentage of max power to use for digital inputs (mouse, keyboard)
+int digital_difference; // How much to add or subtract from 1500 for ESC control, calculated from digital_threshold upon initialization
 
 //// For gamepad controls
 Gamepad^ gamepad = nullptr; // Instantiate the gamepad class so we can get the list of connected gamepads later
-float analog_threshold = 0.4; // Max percentage of power to use for analog input (xinput gamepad)
+float analog_threshold = 0.3; // Max percentage of power to use for analog input (xinput gamepad)
 float deadzone = 0.10; // Analog deadzone
 int x, y, z, pitch, yaw, roll; // Desired axes movement values, applied to thrusters in poll_pad
 
 // Thrusters are less effective backwards, ratio to compensate
-float back_comp = 0.1;
+float back_comp = 0.03;
 
 // Sensor Data
 String^ internalTemp;
@@ -95,12 +93,14 @@ String^ alt;
 String^ x_o;
 String^ y_o;
 String^ z_o;
+String^ water1;
+String^ water2;
 
 // ESC Microsecond Values
 int left = 1500, top = 1500, front = 1500, back = 1500, bottom = 1500, right = 1500, light = 1100;
 
 //// These hold the user's requested controls. Each of the three input devices modifies these.
-//// They are named for the key configuration
+//// They are named for the key configuration, and are only for digital input methods (on-screen buttons and keyboard)
 bool c_w = false, c_a = false, c_s = false, c_d = false, c_i = false, c_j = false, c_k = false,
 c_l = false, c_q = false, c_e = false, c_sh = false, c_sp = false;
 
@@ -211,7 +211,7 @@ void Submarine::MainPage::connect_click(Platform::Object^ sender, Windows::UI::X
 
 	// Connect the Arduino and begin communication
 	TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
-	ts.Duration = 250000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
+	ts.Duration = 1000000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
 	network_timer->Interval = ts; // Set the interval
 	auto doit = network_timer->Tick += ref new EventHandler<Object^>(this, &MainPage::sendRequest); // Attach network communication to the timer
 	network_timer->Start(); // Start the timer
@@ -227,7 +227,6 @@ void Submarine::MainPage::connect_click(Platform::Object^ sender, Windows::UI::X
 	// Below are some sample options that you can set to configure RTSP streaming
 	options->Insert("rtsp_flags", "prefer_tcp");
 	// options->Insert("stimeout", 100000);
-	// Instantiate FFmpegInteropMSS using the URI
 	camfeed->Stop();
 	// THIS ABSOLUTELY MUST BE DECLARED IN THE .h FILE!! Only took me three hours to figure that out...
 	FFmpegMSS = FFmpegInteropMSS::CreateFFmpegInteropMSSFromUri(camStream, true, true, options); // Despite the name, this wants a String^ not a Uri^
@@ -438,28 +437,28 @@ void Submarine::MainPage::Xboxc_Click(Platform::Object^ sender, Windows::UI::Xam
 // Get the state of the gamepad, map that to our thrusters
 void Submarine::MainPage::pollPad(Object^ sender, Object^ e) {
 	auto state = gamepad->GetCurrentReading(); // Read the state of the gamepad
-	// Left and right thrusters, which facilitate Y and Yaw axes
+	// Left and right thrusters, which facilitate X and Yaw axes
 	if (state.LeftThumbstickY > deadzone || state.LeftThumbstickY < -deadzone)
-		y = 400 * analog_threshold * state.LeftThumbstickY;
+		x = 400 * analog_threshold * state.LeftThumbstickY;
 	else if (deadzone > state.LeftThumbstickY > -deadzone)
-		y = 0;
+		x = 0;
 	if (-deadzone > state.RightThumbstickX || state.RightThumbstickX > deadzone)
 		yaw = 400 * analog_threshold * state.RightThumbstickX;
 	else
 		yaw = 0;
-	left = 1500 + y + yaw;
-	right = 1500 + y - yaw;
-	// Top and bottom thrusters, which facilitate X and Roll axes
+	left = 1500 + x + yaw;
+	right = 1500 + x - yaw;
+	// Top and bottom thrusters, which facilitate Y and Roll axes
 	if (state.LeftThumbstickX > deadzone || state.LeftThumbstickX < -deadzone)
-		x = 400 * analog_threshold * -state.LeftThumbstickX;
+		y = 400 * analog_threshold * -state.LeftThumbstickX;
 	else if (deadzone > state.LeftThumbstickX > -deadzone)
-		x = 0;
+		y = 0;
 	if (state.LeftTrigger > deadzone|| state.RightTrigger > deadzone)
 		roll = 400 * analog_threshold * (state.LeftTrigger - state.RightTrigger);
 	else
 		roll = 0;
-	top = 1500 + x + roll;
-	bottom = 1500 + x - roll;
+	top = 1500 + y + roll;
+	bottom = 1500 + y - roll;
 	// Front and back thrusters, which facilitate Z and Pitch axes
 	if (state.Buttons.ToString() == "LeftShoulder") // The Buttoms come in some strange bitwise-combined enumeration that I DONT
 		z = 400 * analog_threshold * -1;		    // have the time to figure out... this works but is really gross
@@ -472,6 +471,13 @@ void Submarine::MainPage::pollPad(Object^ sender, Object^ e) {
 		pitch = 0;
 	front = 1500 + z + pitch;
 	back = 1500 + z - pitch;
+
+	if ((-deadzone < state.LeftThumbstickY < deadzone) && (-deadzone < state.LeftThumbstickX < deadzone)
+		&& (-deadzone < state.RightThumbstickY < deadzone) && (-deadzone < state.RightThumbstickX < deadzone)
+		&& (deadzone > state.LeftTrigger) && (deadzone > state.RightTrigger) && (state.Buttons.ToString() == "None")) { // If no input is given...
+		hover(); // Employ a software control system to stabilize orientation and hover in place
+	}
+
 	// Compensate for the fact that the thrusters are less powerful spinning backwards
 	if (left < 1500)
 		left -= 400 * analog_threshold * back_comp;
@@ -561,19 +567,24 @@ void Submarine::MainPage::controlconv(Object^ sender, Object^ e) {
 		front = 1500;
 		back = 1500;
 	}
+
+	if (!c_w && !c_s && !c_a && !c_d && !c_i && !c_k && !c_j && !c_l && !c_q && !c_e && !c_sh && !c_sp) { // If no input is given...
+		hover(); // Employ a software control system to stabilize orientation and hover in place
+	}
+
 	// Compensate for the fact that the thrusters are less powerful spinning backwards
 	if (left < 1500)
-		left -= 400 * analog_threshold * back_comp;
+		left -= 400 * digital_threshold * back_comp;
 	if (top < 1500)
-		top -= 400 * analog_threshold * back_comp;
+		top -= 400 * digital_threshold * back_comp;
 	if (front < 1500)
-		front -= 400 * analog_threshold * back_comp;
+		front -= 400 * digital_threshold * back_comp;
 	if (back < 1500)
-		back -= 400 * analog_threshold * back_comp;
+		back -= 400 * digital_threshold * back_comp;
 	if (bottom < 1500)
-		bottom -= 400 * analog_threshold * back_comp;
+		bottom -= 400 * digital_threshold * back_comp;
 	if (right < 1500)
-		right -= 400 * analog_threshold * back_comp;
+		right -= 400 * digital_threshold * back_comp;
 	servToScreen();
 }
 
@@ -595,9 +606,17 @@ void Submarine::MainPage::sendRequest(Object^ sender, Object^ e) {
 		auto talk = create_task(client->GetStringAsync(uri)); // Create the task and execute it Asynchronously
 		talk.then([this](String^ sens) { // Provide the lambda of what to do, the "codeParse" function in our case
 			codeParse(sens->Data()); // Parse the sensor code "->Data()" gives a std::wstring; this is necessary for parsing
+		})
+			.then([](task<void> t) {
+			try {
+				t.get();
+			}
+			catch (COMException^ e) {
+
+			}
 		});
 	}
-	catch (COMException^ ex) {
+	catch (Exception^ ex) {
 		auto errorDialog = ref new MessageDialog("Controller Communication Failure"); errorDialog->ShowAsync();
 	}
 }
@@ -608,7 +627,7 @@ void Submarine::MainPage::sendRequest(Object^ sender, Object^ e) {
 void Submarine::MainPage::codeParse(std::wstring item) {
 	std::wstringstream stream(item); // On the Arduino, we did C-type parsing to decude the code sent by this app
 	std::wstring token; // I tried that, and it led me on a long journey to nowhere (like a lot of other things in this project)
-	std::wstring data[8]; // I eventually settled on this C++ type parsing with getline, just like I did for Dr. Digh's spellchecker
+	std::wstring data[10]; // I eventually settled on this C++ type parsing with getline, just like I did for Dr. Digh's spellchecker
 	int c = 0; // but with wstring and related stuff because of Windows
 	while (std::getline(stream, token, (wchar_t)'#')) { // Jesus Christ on a barstool WHY do I have to cast the the '#' to wide when EVERYTHING else defauls to wide!?
 		data[c] = token; // Have to save to an array first, doesn't work if I don't for some reason if I use if statements to go directly to the String^s
@@ -622,6 +641,8 @@ void Submarine::MainPage::codeParse(std::wstring item) {
 	x_o = ref new String(data[5].c_str());
 	y_o = ref new String(data[6].c_str());
 	z_o = ref new String(data[7].c_str());
+	water1 = ref new String(data[8].c_str());
+	water2 = ref new String(data[9].c_str());
 	sensToScreen(); // Update
 	servToScreen();
 }
@@ -637,7 +658,10 @@ void Submarine::MainPage::sensToScreen() { // Getting the sensor data into the T
 		"\nOrientation Data\n"
 		"X Orientation\t\t" + x_o + "\n" +
 		"Y Orientation\t\t" + y_o + "\n" +
-		"Z Orientation\t\t" + z_o + "\n"; // + 
+		"Z Orientation\t\t" + z_o + "\n" +
+		"\nWater Breach Sensors (DISCONNECT AND RETRIEVE IF NONZERO)\n" +
+		"Front\t\t\t" + water1 + "\n" +
+		"Back\t\t\t" + water2 + "\n";// + 
 		//"\nRaw\n" + rawRec;
 }
 
@@ -653,9 +677,10 @@ void Submarine::MainPage::servToScreen() { // Getting the ESC and headlight data
 		"\nHeadlight Brightness\n" + ((light - 1100) / 8) + " %\t" + light + " microseconds\n";
 }
 
-// A note on maximum thruster speeds in the early versions of the code:
-// Each thruster has a hard cap on its speed so as to not trip the 30 A breaker or overheat the power wire
-// A maximum of 30 A and 6 thrusters means a safe max of 5 A. Each ESC can pull up to 12.5 A.
-// 5 A / 12.5 A means the maximum percentage that each thruster can be activated is 40%
-// 1500 microseconds is the stop command for the ESCs, and 1900 is max forward and 1100 is max backward,
-// so the difference between max and off is 400 microseconds. 400 times 40% is 160, so 1500 +- 160 is the maximum speed microseconds value
+// A software control system which uses orientation data to make the submarine hover in place
+void Submarine::MainPage::hover() {
+	double x_orientation = _wtof(x_o->Data()); // Convert the strings with the orientation data from the Arduino back to doubles
+	double y_orientation = _wtof(y_o->Data());
+	double z_orientation = _wtof(z_o->Data());
+	// WRITE THE ACTUAL CONTROL SYSTEM HERE
+}
