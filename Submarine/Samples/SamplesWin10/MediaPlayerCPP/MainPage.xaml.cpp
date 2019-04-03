@@ -70,6 +70,7 @@ String^ contAddr = "192.168.1.182"; // Arduino URL, this is the static IP assign
 DispatcherTimer^ network_timer; // Network communication timer
 DispatcherTimer^ gamepad_timer; // Gamepad polling timer
 DispatcherTimer^ movement_timer; // Digital controls timer
+DispatcherTimer^ approach_timer; // Speed target approach timer
 
 //// For mouse and keyboard controls
 float digital_threshold = 0.3; // Percentage of max power to use for digital inputs (mouse, keyboard)
@@ -96,8 +97,11 @@ String^ z_o;
 String^ water1;
 String^ water2;
 
-// ESC Microsecond Values
+// ESC Microsecond Targets
 int left = 1500, top = 1500, front = 1500, back = 1500, bottom = 1500, right = 1500, light = 1100;
+
+// ESC Microsecond Final Values
+int fleft = 1500, ftop = 1500, ffront = 1500, fback = 1500, fbottom = 1500, fright = 1500, flight = 1100;
 
 //// These hold the user's requested controls. Each of the three input devices modifies these.
 //// They are named for the key configuration, and are only for digital input methods (on-screen buttons and keyboard)
@@ -118,6 +122,7 @@ MainPage::MainPage()
 	network_timer = ref new DispatcherTimer(); // Initialize global objects
 	gamepad_timer = ref new DispatcherTimer();
 	movement_timer = ref new DispatcherTimer();
+	approach_timer = ref new DispatcherTimer();
 
 	// Here's where we actually move the submarine based on the user's input (DIGITAL INPUTS ONLY)
 	TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
@@ -125,6 +130,12 @@ MainPage::MainPage()
 	movement_timer->Interval = ts; // Set the interval
 	auto doit = movement_timer->Tick += ref new EventHandler<Object^>(this, &MainPage::controlconv); // Attach conversion to the timer
 	movement_timer->Start(); // Start the timer
+	
+	TimeSpan ts2;
+	ts2.Duration = 1;
+	approach_timer->Interval = ts2;
+	auto appr = approach_timer->Tick += ref new EventHandler<Object^>(this, &MainPage::approach);
+	approach_timer->Start();
 
 	// Do some simple calculations we only need to do once
 	digital_difference = 400 * digital_threshold;
@@ -597,7 +608,7 @@ void Submarine::MainPage::controlconv(Object^ sender, Object^ e) {
 // It's something of an elegant exchange. The dispatcher timer in controls_click attaches to this function.
 void Submarine::MainPage::sendRequest(Object^ sender, Object^ e) {
 	// This is the formatted control code which is sent as a GET request and parsed by the Arduino
-	String^ encodedReq = "http://" + contAddr + "/$" + left + "-" + top + "-" + front + "-" + back + "-" + bottom + "-" + right + "-" + light + "__opcode";
+	String^ encodedReq = "http://" + contAddr + "/$" + fleft + "-" + ftop + "-" + ffront + "-" + fback + "-" + fbottom + "-" + fright + "-" + light + "__opcode";
 	auto uri = ref new Uri(encodedReq); // Go from string to Uri for the address of the Arduino and the command to be sent
 	try { // Exception handling is absolutely necessary for network stuff
 		// Sending the GET request and saving the reponse (the sensor data code)
@@ -668,12 +679,12 @@ void Submarine::MainPage::sensToScreen() { // Getting the sensor data into the T
 // Update the TextBlock that displays the ESC data
 void Submarine::MainPage::servToScreen() { // Getting the ESC and headlight data into the TextBlock and formatting it nicely
 	servos->Text = "ESC Data\n" +
-		"Left\t" + ((left - 1500) / 4) + " %\t" + left + " microseconds\n" +
-		"Top\t" + ((top - 1500) / 4) + " %\t" + top + " microseconds\n" +
-		"Front\t" + ((front - 1500) / 4) + " %\t" + front + " microseconds\n" +
-		"Back\t" + ((back - 1500) / 4) + " %\t" + back + " microseconds\n" +
-		"Bottom\t" + ((bottom - 1500) / 4) + " %\t" + bottom + " microseconds\n" +
-		"Right\t" + ((right - 1500) / 4) + " %\t" + right + " microseconds\n" +
+		"Left\t" + ((fleft - 1500) / 4) + " %\t" + fleft + " microseconds\n" +
+		"Top\t" + ((ftop - 1500) / 4) + " %\t" + ftop + " microseconds\n" +
+		"Front\t" + ((ffront - 1500) / 4) + " %\t" + ffront + " microseconds\n" +
+		"Back\t" + ((fback - 1500) / 4) + " %\t" + fback + " microseconds\n" +
+		"Bottom\t" + ((fbottom - 1500) / 4) + " %\t" + fbottom + " microseconds\n" +
+		"Right\t" + ((fright - 1500) / 4) + " %\t" + fright + " microseconds\n" +
 		"\nHeadlight Brightness\n" + ((light - 1100) / 8) + " %\t" + light + " microseconds\n";
 }
 
@@ -683,4 +694,31 @@ void Submarine::MainPage::hover() {
 	double y_orientation = _wtof(y_o->Data());
 	double z_orientation = _wtof(z_o->Data());
 	// WRITE THE ACTUAL CONTROL SYSTEM HERE
+}
+
+void Submarine::MainPage::approach(Object^ sender, Object^ e) {
+	if (fleft < left)
+		fleft += 4;
+	else if (fleft > left)
+		fleft -= 4;
+	if (ftop < top)
+		ftop += 4;
+	else if (ftop > top)
+		ftop -= 4;
+	if (ffront < front)
+		ffront += 4;
+	else if (ffront > front)
+		ffront -= 4;
+	if (fback < back)
+		fback += 4;
+	else if (fback > back)
+		fback -= 4;
+	if (fbottom < bottom)
+		fbottom += 4;
+	else if (fbottom > bottom)
+		fbottom -= 4;
+	if (fright < right)
+		fright += 4;
+	else if (fright > right)
+		fright -= 4;
 }

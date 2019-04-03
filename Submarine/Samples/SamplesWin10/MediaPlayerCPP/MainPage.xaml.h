@@ -48,6 +48,7 @@ namespace Submarine
 		void codeParse(std::wstring);
 		void sensToScreen();
 		void servToScreen();
-
+		void hover();
+		void approach(Object^,Object^);
 	};
 }
