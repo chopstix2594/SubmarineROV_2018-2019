@@ -8,6 +8,10 @@
 //// Arduino Sketch
 // First build on 30 January 2019
 
+// Please read the comments in "MainPage.xaml.cpp in "Submarine" for an introduction
+// Almost everything is defined as a global variable so I could keep track of memory usage easily
+// Make sure that either an SD card is not inserted in the shield, or pin 4 is held HIGH or this will break
+
 #include <Ethernet.h>
 #include <Servo.h>
 #include <Wire.h>
@@ -21,7 +25,7 @@ IPAddress ip(192, 168, 1, 182);
 EthernetServer server(80);
 EthernetClient client;
 
-// Servos
+// ESCs and the Light, which are all controlled by servo objects
 Servo left, top, front, back, bottom, right, light;
 
 // Servo Speed Values
@@ -105,11 +109,13 @@ void setup() {
   //Serial.println("It's showtime...");
 }
 
+// Read the sensors, then do network stuff
 void loop(){
   readSensors();
   webServer();
 }
 
+// Present the sensor data as a web page, look for requests, control the servos to match those requests
 void webServer(){
   client = server.available();
   if(client){
@@ -161,11 +167,14 @@ void webServer(){
   }
 }
 
+// Read the sensors
 void readSensors(){
+// Problems with AD8495, temperature from BNO055 used instead
 //  thermoread = analogRead(A15);
 //  thermovolts = thermoread * (5.0 / 1023.0);
 //  internalTemp = (thermovolts) / 0.005;
-
+  internalTemp = bno.getTemp(); // Here
+  
   externalTemp = Bar30.temperature();
   pressure = Bar30.pressure();
   depth = Bar30.depth();
@@ -176,12 +185,13 @@ void readSensors(){
   x_o = event.orientation.x;
   y_o = event.orientation.y;
   z_o = event.orientation.z;
-  internalTemp = bno.getTemp();
+
 
   wat1 = analogRead(A8);
   wat2 = analogRead(A9);
 }
 
+// The computer sends these as a string, gotta parse to get the values to the ESCs
 void codeParse(String item){
   while(item[i] != '$')
     i++;
