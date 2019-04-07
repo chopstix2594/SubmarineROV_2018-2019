@@ -73,17 +73,17 @@ DispatcherTimer^ movement_timer; // Digital controls timer
 DispatcherTimer^ approach_timer; // Speed target approach timer
 
 //// For mouse and keyboard controls
-float digital_threshold = 0.3; // Percentage of max power to use for digital inputs (mouse, keyboard)
+float digital_threshold = 0.6; // Percentage of max power to use for digital inputs (mouse, keyboard)
 int digital_difference; // How much to add or subtract from 1500 for ESC control, calculated from digital_threshold upon initialization
 
 //// For gamepad controls
 Gamepad^ gamepad = nullptr; // Instantiate the gamepad class so we can get the list of connected gamepads later
-float analog_threshold = 0.3; // Max percentage of power to use for analog input (xinput gamepad)
-float deadzone = 0.10; // Analog deadzone
+float analog_threshold = 0.6; // Max percentage of power to use for analog input (xinput gamepad)
+float deadzone = 0.1; // Analog deadzone
 int x, y, z, pitch, yaw, roll; // Desired axes movement values, applied to thrusters in poll_pad
 
 // Thrusters are less effective backwards, ratio to compensate
-float back_comp = 0.03;
+float back_comp = 0.01;
 
 // Sensor Data
 String^ internalTemp;
@@ -222,7 +222,7 @@ void Submarine::MainPage::connect_click(Platform::Object^ sender, Windows::UI::X
 
 	// Connect the Arduino and begin communication
 	TimeSpan ts; // For some reason this needs it's own datatype, the span of time between timer ticks
-	ts.Duration = 1000000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
+	ts.Duration = 550000; // Set the time between timer ticks here. For some reason this is in 0.0000001 seconds, so this is 10 ms
 	network_timer->Interval = ts; // Set the interval
 	auto doit = network_timer->Tick += ref new EventHandler<Object^>(this, &MainPage::sendRequest); // Attach network communication to the timer
 	network_timer->Start(); // Start the timer
@@ -608,7 +608,8 @@ void Submarine::MainPage::controlconv(Object^ sender, Object^ e) {
 // It's something of an elegant exchange. The dispatcher timer in controls_click attaches to this function.
 void Submarine::MainPage::sendRequest(Object^ sender, Object^ e) {
 	// This is the formatted control code which is sent as a GET request and parsed by the Arduino
-	String^ encodedReq = "http://" + contAddr + "/$" + fleft + "-" + ftop + "-" + ffront + "-" + fback + "-" + fbottom + "-" + fright + "-" + light + "__opcode";
+	//String^ encodedReq = "http://" + contAddr + "/$" + fleft + "-" + ftop + "-" + ffront + "-" + fback + "-" + fbottom + "-" + fright + "-" + light + "__opcode";
+	String^ encodedReq = "http://" + contAddr + "/$" + ffront + "-" + ftop + "-" + fleft + "-" + fback + "-" + fbottom + "-" + fright + "-" + light + "__opcode";
 	auto uri = ref new Uri(encodedReq); // Go from string to Uri for the address of the Arduino and the command to be sent
 	try { // Exception handling is absolutely necessary for network stuff
 		// Sending the GET request and saving the reponse (the sensor data code)
